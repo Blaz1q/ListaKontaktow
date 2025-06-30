@@ -1,0 +1,233 @@
+﻿@page "/"
+@using ListaKontaktow.Components.Layout
+@inject HttpClient Http
+<PageTitle>Lista Kontaktów</PageTitle>
+@rendermode InteractiveServer
+
+<h3>Lista Kontaktów</h3>
+
+<p>Liczba kontaktów: @kontakty.Count</p>
+
+@if (currentKontakt is not null)
+{
+    <div class="card mt-3 p-3">
+        <h4>Szczegóły kontaktu:</h4>
+        <p><strong>Imię:</strong> @currentKontakt.Imie</p>
+        <p><strong>Nazwisko:</strong> @currentKontakt.Nazwisko</p>
+        <p><strong>Email:</strong> @currentKontakt.Email</p>
+        <p><strong>Telefon:</strong> @currentKontakt.Telefon</p>
+        <p><strong>Hasło:</strong> @currentKontakt.Haslo</p>
+        <p><strong>Kategoria:</strong> @currentKontakt.Kategoria.Nazwa</p>
+        @if (currentKontakt.Podkategoria != null)
+        {
+            <p><strong>Podkategoria:</strong> @currentKontakt.Podkategoria</p>
+        }
+    </div>
+}
+@if (!Dane.isTokenEmpty())
+{
+    <button class="btn btn-primary" @onclick="() => ShowModal(true)">Dodaj kontakt</button>
+}
+
+
+@if (showModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Dodaj nowy kontakt</h5>
+                    <button type="button" class="btn-close" @onclick="() => ShowModal(false)"></button>
+                </div>
+                <div class="modal-body">
+                    <KontaktFormularz NowyKontakt="nowyKontakt" OnValidSubmitCallback="DodajKontakt" OnCancelCallback="() => ShowModal(false)" />
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (showEditModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edytuj kontakt</h5>
+                    <button type="button" class="btn-close" @onclick="() => ShowEditModal(null)"></button>
+                </div>
+                <div class="modal-body">
+                    <KontaktFormularz NowyKontakt="edytowanyKontakt" OnValidSubmitCallback="ZapiszZmiany" OnCancelCallback="() => ShowEditModal(null)" originalEmail="@originalEmail" />
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (!kontakty.Any())
+{
+    <p>Ładowanie..</p>
+}
+else
+{
+    <ul class="list-group mt-3">
+        @foreach (var kontakt in kontakty)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>@kontakt.Imie @kontakt.Nazwisko</span>
+                @if (!Dane.isTokenEmpty())
+                {
+                <div>
+                    <button class="btn btn-sm btn-info me-2" @onclick="() => displayinfo(kontakt)">Szczegóły</button>
+                    <button class="btn btn-sm btn-danger" @onclick="() => UsunKontakt(kontakt)">Usuń</button>
+                    <button class="btn btn-sm btn-warning me-2" @onclick="() => ShowEditModal(kontakt)">Edytuj</button>
+                </div>
+                }
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    private bool showEditModal = false;
+    private Kontakt edytowanyKontakt = new Kontakt();
+    private bool showModal = false;
+    private Kontakt? currentKontakt;
+    private List<Kontakt> kontakty = Dane.kontakty;
+    private Kontakt nowyKontakt = new Kontakt(); // model formularza
+    protected override void OnInitialized()
+    {
+
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        Dane.kontakty = await Http.GetFromJsonAsync<List<Kontakt>>("api/contacts") ?? new();
+        Dane.kategorie = await Http.GetFromJsonAsync<List<SlownikKategorii>>("api/slownikkategorii") ?? new();
+    }
+    private void ShowModal(bool show)
+    {
+        showModal = show;
+        if (show)
+        {
+            nowyKontakt = new Kontakt();
+        }
+    }
+    private string originalEmail; // przechowuje email sprzed edycji
+
+    private void ShowEditModal(Kontakt? kontakt)
+    {
+        if (kontakt is null)
+        {
+            showEditModal = false;
+            edytowanyKontakt = new Kontakt();
+            originalEmail = null;
+        }
+        else
+        {
+            showEditModal = true;
+            edytowanyKontakt = new Kontakt
+                {
+                    Imie = kontakt.Imie,
+                    Nazwisko = kontakt.Nazwisko,
+                    Email = kontakt.Email,
+                    Telefon = kontakt.Telefon,
+                    Haslo = kontakt.Haslo,
+                    Podkategoria = kontakt.Podkategoria,
+                    DataUrodzenia = kontakt.DataUrodzenia,
+                    KategoriaId = kontakt.Kategoria?.Id ?? 0
+                };
+            originalEmail = kontakt.Email; // zapamiętujemy email sprzed edycji
+        }
+    }
+
+    private void displayinfo(Kontakt kontakt)
+    {
+        currentKontakt = kontakt;
+    }
+    private async Task DodajKontakt()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "api/contacts");
+        request.Content = JsonContent.Create(nowyKontakt);
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Dane.Token);
+
+        var response = await Http.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            nowyKontakt.Kategoria = Dane.kategorie.FirstOrDefault(k => k.Id == nowyKontakt.KategoriaId);
+            kontakty.Add(nowyKontakt);   
+            Console.WriteLine("Dodano kontakt.");
+            nowyKontakt = new();
+            ShowModal(false);
+        }
+        else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            Console.WriteLine("Email już istnieje.");
+        }
+        else
+        {
+            Console.WriteLine("Błąd dodawania: " + response.StatusCode);
+        }
+    }
+
+    private async Task UsunKontakt(Kontakt kontakt)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Delete, $"api/contacts/{kontakt.Email}");
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Dane.Token);
+
+        var response = await Http.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            kontakty.Remove(kontakt);
+            if (currentKontakt == kontakt)
+                currentKontakt = null;
+
+            StateHasChanged();
+            Console.WriteLine("Usunięto kontakt.");
+        }
+        else
+        {
+            Console.WriteLine("Błąd usuwania: " + response.StatusCode);
+        }
+    }
+    private async Task ZapiszZmiany(Kontakt zaktualizowany)
+    {
+        if (string.IsNullOrEmpty(originalEmail))
+        {
+            Console.WriteLine("Błąd: brak oryginalnego emaila do aktualizacji.");
+            return;
+        }
+
+        var request = new HttpRequestMessage(HttpMethod.Put, $"api/contacts/{originalEmail}");
+        request.Content = JsonContent.Create(zaktualizowany);
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Dane.Token);
+
+        var response = await Http.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var index = kontakty.FindIndex(k => k.Email == originalEmail);
+            if (index != -1)
+            {
+                // Ustawiamy kategorię i aktualizujemy listę kontaktów
+                var updatedWithCategory = zaktualizowany;
+                updatedWithCategory.Kategoria = Dane.kategorie.FirstOrDefault(k => k.Id == zaktualizowany.KategoriaId);
+                kontakty[index] = updatedWithCategory;
+            }
+
+            if (currentKontakt?.Email == originalEmail)
+            {
+                currentKontakt = kontakty.FirstOrDefault(k => k.Email == zaktualizowany.Email);
+            }
+
+            originalEmail = null; // czyścimy po aktualizacji
+            ShowEditModal(null);
+            Console.WriteLine("Zaktualizowano kontakt.");
+        }
+        else
+        {
+            Console.WriteLine("Błąd aktualizacji: " + response.StatusCode);
+        }
+    }
+
+}

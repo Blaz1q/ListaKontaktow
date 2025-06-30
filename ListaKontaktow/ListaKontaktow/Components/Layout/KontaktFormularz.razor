@@ -1,0 +1,169 @@
+﻿<EditForm Model="NowyKontakt" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label>Imię:</label>
+        <InputText class="@GetValidationClass(!IsFirstNameValid)" @bind-Value="NowyKontakt.Imie" />
+        @if (!IsFirstNameValid)
+        {
+            <div class="text-danger">Imię nie może być puste.</div>
+        }
+    </div>
+
+    <div class="mb-3">
+        <label>Nazwisko:</label>
+        <InputText class="@GetValidationClass(!IsLastNameValid)" @bind-Value="NowyKontakt.Nazwisko" />
+        @if (!IsLastNameValid)
+        {
+            <div class="text-danger">Nazwisko nie może być puste.</div>
+        }
+    </div>
+    <div class="mb-3">
+        <label>Email:</label>
+        <InputText type="email" class="@GetValidationClass(!IsEmailValid||EmailExists)" @bind-Value="NowyKontakt.Email" />
+        @if (!IsEmailValid)
+        {
+            <div class="text-danger">Adres e-mail jest niepoprawny.</div>
+        }
+        @if (EmailExists)
+        {
+            <div class="text-danger">Adres e-mail istnieje.</div>
+        }
+    </div>
+
+    <div class="mb-3">
+        <label>Hasło:</label>
+        <InputText type="password" class="@GetValidationClass(!IsPasswordValid)" @bind-Value="NowyKontakt.Haslo" />
+        @if (!IsPasswordValid)
+        {
+            <div class="text-danger">Hasło musi zawierać co najmniej 8 znaków, wielką literę i znak specjalny.</div>
+        }
+    </div>
+
+    <div class="mb-3">
+        <label>Telefon:</label>
+        <InputText class="@GetValidationClass(!IsPhoneValid)" @bind-Value="NowyKontakt.Telefon" />
+        @if (!IsPhoneValid)
+        {
+            <div class="text-danger">Telefon musi składać się z 9 cyfr.</div>
+        }
+    </div>
+
+    <div class="mb-3">
+        <label>Kategoria:</label>
+        <InputSelect class="@GetValidationClass(!isKategoriaValid)" @bind-Value="NowyKontakt.KategoriaId">
+            @foreach (var kat in Dane.kategorie)
+            {
+                <option value="@kat.Id">@kat.Nazwa</option>
+            }
+        </InputSelect>
+        @if (!IsPasswordValid)
+        {
+            <div class="text-danger">Proszę wybrać kategorię.</div>
+        }
+    </div>
+    @{
+        var selectedCategory = Dane.kategorie.FirstOrDefault(k => k.Id == NowyKontakt.KategoriaId);
+    }
+    @switch (selectedCategory?.Nazwa.ToLower())
+    {
+        case "służbowy":
+            { 
+            if(NowyKontakt.Podkategoria==null) NowyKontakt.Podkategoria = "Klient";
+            <div class="mb-3">
+                <label>Podkategoria:</label>
+                <InputSelect class="form-control" @bind-Value="NowyKontakt.Podkategoria">
+                    <option value="Klient">Klient</option>
+                    <option value="Szef">Szef</option>
+                    <option value="Współpracownik">Współpracownik</option>
+                </InputSelect>
+                </div>
+            }
+            break;
+        case "inny":
+            {
+                NowyKontakt.Podkategoria = null;
+                
+                <div class="mb-3">
+                <label>Podkategoria:</label>
+                <InputText class="form-control" @bind-Value="NowyKontakt.Podkategoria" />
+                </div>
+            }
+            break;
+        default:
+            {
+                NowyKontakt.Podkategoria = null;
+            }
+            break;
+    }
+    <div class="mb-3">
+        <label>Data urodzenia:</label>
+        <InputDate class="form-control" @bind-Value="NowyKontakt.DataUrodzenia" />
+    </div>
+
+    <button type="submit" class="btn btn-success me-2">Dodaj</button>
+    <button type="button" class="btn btn-secondary" @onclick="OnCancel">Anuluj</button>
+</EditForm>
+@code {
+    [Parameter]
+    public Kontakt NowyKontakt { get; set; } = new Kontakt();
+
+    [Parameter]
+    public EventCallback<Kontakt> OnValidSubmitCallback { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancelCallback { get; set; }
+
+    private bool IsEmailValid { get; set; } = true;
+    private bool IsPasswordValid { get; set; } = true;
+    private bool IsPhoneValid { get; set; } = true;
+    private bool IsFirstNameValid { get; set; } = true;
+    private bool IsLastNameValid { get; set; } = true;
+    private bool EmailExists { get; set; } = false;
+    private bool isKategoriaValid { get; set; } = true;
+    [Parameter]
+    public string? originalEmail { get; set; }
+
+    private async Task HandleValidSubmit()
+    {
+        IsFirstNameValid = !string.IsNullOrWhiteSpace(NowyKontakt.Imie); //sprawdzamy czy imie jest wypełnione
+        //IsLastNameValid = !string.IsNullOrWhiteSpace(NowyKontakt.Nazwisko); //sprawdzamy czy nazwisko jest wypełnion
+        IsEmailValid = Validate.IsValidEmail(NowyKontakt.Email); //sprawdzamy czy email jest poprawny
+        //Console.WriteLine(NowyKontakt.Email); //debug
+        IsPasswordValid = Validate.IsStrongPassword(NowyKontakt.Haslo); //sprawdzamy czt hasło jest poprawne (bezpieczne)
+        IsPhoneValid = System.Text.RegularExpressions.Regex.IsMatch(NowyKontakt.Telefon ?? "", @"^\d{9}$") || string.IsNullOrEmpty(NowyKontakt.Telefon); //sprawdzamy czy telefon jest poprawny
+        isKategoriaValid = NowyKontakt.KategoriaId!=0;
+        if (NowyKontakt.Email == null) return; //jeżeli jest puste, przerwij
+        var newEmail = NormalizeEmail(NowyKontakt.Email);
+        var original = NormalizeEmail(originalEmail);
+        //sprawdzamy czy email nie koliduje
+        if (!string.IsNullOrEmpty(original)) //podaczas edycji, wymagane jest pominięcie edytowanego emaila 
+        {
+            EmailExists = Dane.kontakty.Any(k =>
+                NormalizeEmail(k.Email) == newEmail &&
+                NormalizeEmail(k.Email) != original);
+        }
+        else 
+        {
+            EmailExists = Dane.kontakty.Any(k =>
+                NormalizeEmail(k.Email) == newEmail);
+        }
+        //debug
+        //Console.WriteLine($"Checking EmailExists for '{newEmail}', original: '{original}'");
+        // foreach (var k in Dane.kontakty)
+        //     Console.WriteLine($"Kontakt email: '{NormalizeEmail(k.Email)}'");
+        if (!IsFirstNameValid || !IsLastNameValid || !IsEmailValid || !IsPasswordValid || !IsPhoneValid || EmailExists)
+            return; // jeżeli coś się nie zgadza, nie wysyłamy
+        await OnValidSubmitCallback.InvokeAsync(NowyKontakt);
+    }
+
+    string NormalizeEmail(string? email) => email?.Trim().ToLower() ?? "";
+    private string GetValidationClass(bool isInvalid)
+        => isInvalid ? "form-control is-invalid" : "form-control";
+
+    private async Task OnCancel()
+    {
+        await OnCancelCallback.InvokeAsync();
+    }
+}

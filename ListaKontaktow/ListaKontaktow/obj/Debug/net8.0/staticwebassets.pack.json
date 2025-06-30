@@ -1,0 +1,41 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\Users\\nwmja\\source\\repos\\ListaKontaktow\\ListaKontaktow\\obj\\Debug\\net8.0\\scopedcss\\projectbundle\\ListaKontaktow.bundle.scp.css",
+      "PackagePath": "staticwebassets\\ListaKontaktow.bundle.scp.css"
+    },
+    {
+      "Id": "C:\\Users\\nwmja\\source\\repos\\ListaKontaktow\\ListaKontaktow\\wwwroot\\app.css",
+      "PackagePath": "staticwebassets\\app.css"
+    },
+    {
+      "Id": "C:\\Users\\nwmja\\source\\repos\\ListaKontaktow\\ListaKontaktow\\wwwroot\\bootstrap\\bootstrap.min.css",
+      "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css"
+    },
+    {
+      "Id": "C:\\Users\\nwmja\\source\\repos\\ListaKontaktow\\ListaKontaktow\\wwwroot\\bootstrap\\bootstrap.min.css.map",
+      "PackagePath": "staticwebassets\\bootstrap\\bootstrap.min.css.map"
+    },
+    {
+      "Id": "C:\\Users\\nwmja\\source\\repos\\ListaKontaktow\\ListaKontaktow\\wwwroot\\favicon.png",
+      "PackagePath": "staticwebassets\\favicon.png"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.ListaKontaktow.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.ListaKontaktow.props",
+      "PackagePath": "build\\ListaKontaktow.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.ListaKontaktow.props",
+      "PackagePath": "buildMultiTargeting\\ListaKontaktow.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.ListaKontaktow.props",
+      "PackagePath": "buildTransitive\\ListaKontaktow.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

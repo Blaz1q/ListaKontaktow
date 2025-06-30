@@ -1,0 +1,45 @@
+﻿@page "/testing"
+@rendermode InteractiveServer
+
+<PageTitle>Testing Token and User Info</PageTitle>
+
+<h3>Current Token</h3>
+<p><strong>Token:</strong> @Dane.Token</p>
+
+<label for="tokenInput">Edit Token:</label>
+<input id="tokenInput" @bind="tokenInput" class="form-control mb-3" />
+
+<button class="btn btn-primary mb-3" @onclick="UpdateToken">Update Token</button>
+
+<h3>Current Logged In User Info</h3>
+
+@if (Dane.Token!="")
+{
+    <ul>
+        <li><strong>Imię:</strong> @Dane.LoggedInUser.Imie</li>
+        <li><strong>Nazwisko:</strong> @Dane.LoggedInUser.Nazwisko</li>
+        <li><strong>Email:</strong> @Dane.LoggedInUser.Email</li>
+        <li><strong>Telefon:</strong> @Dane.LoggedInUser.Telefon</li>
+        <li><strong>KategoriaId:</strong> @Dane.LoggedInUser.KategoriaId</li>
+        <li><strong>Podkategoria:</strong> @Dane.LoggedInUser.Podkategoria</li>
+        <li><strong>Data Urodzenia:</strong> @Dane.LoggedInUser.DataUrodzenia.ToShortDateString()</li>
+    </ul>
+}
+else
+{
+    <p>No user logged in.</p>
+}
+
+@code {
+    private string tokenInput = "";
+
+    protected override void OnInitialized()
+    {
+        tokenInput = Dane.Token;
+    }
+
+    private void UpdateToken()
+    {
+        Dane.Token = tokenInput;
+    }
+}

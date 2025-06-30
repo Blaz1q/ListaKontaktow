@@ -1,0 +1,99 @@
+﻿@page "/logowanie"
+@using System.Net.Http.Json
+@using System.ComponentModel.DataAnnotations
+@inject HttpClient Http
+@rendermode InteractiveServer
+
+<div class="card p-4 shadow w-50 mx-auto mt-5">
+    <h3 class="mb-3">Logowanie</h3>
+
+    @if (!string.IsNullOrEmpty(komunikat))
+    {
+        <div class="alert @klasaAlertu">@komunikat</div>
+    }
+
+    <EditForm Model="uzytkownik" OnValidSubmit="Zaloguj" FormName="formularzLogowania">
+        <DataAnnotationsValidator />
+        <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <InputText id="email" class="form-control" @bind-Value="uzytkownik.Email" />
+            <ValidationMessage For="@(() => uzytkownik.Email)" />
+        </div>
+
+        <div class="mb-3">
+            <label for="haslo" class="form-label">Hasło</label>
+            <InputText id="haslo" class="form-control" type="password" @bind-Value="uzytkownik.Haslo" />
+            <ValidationMessage For="@(() => uzytkownik.Haslo)" />
+        </div>
+        <button class="btn btn-primary" type="submit">Zaloguj</button>
+    </EditForm>
+    
+</div>
+
+@code {
+    private LoginModel uzytkownik = new();
+    private string komunikat = "";
+    private string klasaAlertu = "";
+
+    private async Task Zaloguj()
+    {
+        try
+        {
+            Console.WriteLine($"Zaloguj(): Email = '{uzytkownik.Email}', Hasło = '{uzytkownik.Haslo}'");
+
+            var response = await Http.PostAsJsonAsync("api/logowanie", uzytkownik);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var wynik = await response.Content.ReadFromJsonAsync<LoginResponse>();
+                if (wynik != null)
+                {
+                    komunikat = "Zalogowano pomyślnie!";
+                    klasaAlertu = "alert-success";
+
+                    // Zapisz token JWT (np. do memory lub localStorage)
+                    Dane.Token = wynik.token;
+
+                    // Przykład zapisu usera
+                    Dane.LoggedInUser = new Kontakt
+                        {
+                            Imie = wynik.imie,
+                            Nazwisko = wynik.nazwisko,
+                            Email = uzytkownik.Email
+                        };
+                }
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                komunikat = "Błędny email lub hasło.";
+                klasaAlertu = "alert-danger";
+            }
+            else
+            {
+                komunikat = "Błąd logowania. " + response.StatusCode;
+                klasaAlertu = "alert-danger";
+            }
+        }
+        catch (Exception ex)
+        {
+            komunikat = $"Błąd połączenia z serwerem: {ex.Message}";
+            klasaAlertu = "alert-danger";
+        }
+    }
+
+    public class LoginModel
+    {
+        [Required(ErrorMessage = "Email jest wymagany")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Hasło jest wymagane")]
+        public string Haslo { get; set; } = string.Empty;
+    }
+    public class LoginResponse
+    {
+        public string token { get; set; } = "";
+        public string imie { get; set; } = "";
+        public string nazwisko { get; set; } = "";
+    }
+
+}
