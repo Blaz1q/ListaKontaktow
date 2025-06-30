@@ -74,14 +74,14 @@ Kontakt: posiada podstawowe metody get; set.
 
 REST API:
 
-Kontakt: posiada podstawowe metody get; set
-SlownikKategorii: posiada podstawowe metody get; set
-User: posiada podstawowe metody get; set.
+- Kontakt: posiada podstawowe metody get; set
+- SlownikKategorii: posiada podstawowe metody get; set
+- User: posiada podstawowe metody get; set.
 
-KontaktController: posiada pobieranie danych z bazy danych, edytowanie, usuwanie, dodawanie danych do bazy danych
-SlownikKategoriiController: posiada pobieranie danych z bazy danych
-LogowanieController: posiada pobieranie tokena JWT przy poprawnym zalogowaniu.
+- KontaktController: posiada pobieranie danych z bazy danych, edytowanie, usuwanie, dodawanie danych do bazy danych
+- SlownikKategoriiController: posiada pobieranie danych z bazy danych
+- LogowanieController: posiada pobieranie tokena JWT przy poprawnym zalogowaniu.
 
-JsonWebToken: posiada logikę generowania tokena JWT
-Validate: posiada 2 metody, które odpowiadają za walidacje hasła oraz email
-ApiContext: posiada ustawienia oraz pola do prawidłowego pobierania bazy danych.
+- JsonWebToken: posiada logikę generowania tokena JWT
+- Validate: posiada 2 metody, które odpowiadają za walidacje hasła oraz email
+- ApiContext: posiada ustawienia oraz pola do prawidłowego pobierania bazy danych.
