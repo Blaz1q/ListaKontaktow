@@ -67,6 +67,10 @@
 {
     <p>Ładowanie..</p>
 }
+@if (servererror)
+{
+    <p>Błąd pobierania danych. @servererrormessage</p>    
+}
 else
 {
     <ul class="list-group mt-3">
@@ -91,6 +95,8 @@ else
     private bool showEditModal = false;
     private Kontakt edytowanyKontakt = new Kontakt();
     private bool showModal = false;
+    private bool servererror = false;
+    private string servererrormessage;
     private Kontakt? currentKontakt;
     private List<Kontakt> kontakty = Dane.kontakty;
     private Kontakt nowyKontakt = new Kontakt(); // model formularza
@@ -100,8 +106,18 @@ else
     }
     protected override async Task OnInitializedAsync()
     {
-        Dane.kontakty = await Http.GetFromJsonAsync<List<Kontakt>>("api/contacts") ?? new();
-        Dane.kategorie = await Http.GetFromJsonAsync<List<SlownikKategorii>>("api/slownikkategorii") ?? new();
+        try
+        {
+            Dane.kontakty = await Http.GetFromJsonAsync<List<Kontakt>>("api/contacts") ?? new();
+            Dane.kategorie = await Http.GetFromJsonAsync<List<SlownikKategorii>>("api/slownikkategorii") ?? new();
+
+        }
+        catch (Exception e)
+        {
+            servererror = true;
+            servererrormessage = e.Message;
+            Console.WriteLine("server error: " + servererrormessage);
+        }
     }
     private void ShowModal(bool show)
     {
